@@ -3,7 +3,7 @@ use chrono::{Utc, DateTime};
 use serde::{Serialize, Deserialize};
 
 // #[derive(Serialize)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
     pub name: String,
     pub data_type: FieldDataType,
@@ -11,8 +11,7 @@ pub struct Field {
     pub field_length_type: BitLengthType,
     pub field_type: FieldType,
     pub repeating_length_name: Option<String>,
-    pub repeating_spec_id: Option<i32>,
-    // pub value: Option<FieldValue>,
+    pub repeating_spec_id: Option<String>,
 }
 
 
@@ -35,7 +34,6 @@ pub enum FieldDataType {
     Utc,
 }
 
-#[derive(Clone)]
 pub enum FieldValue {
     Byte(u8), // U8
     U16(u16),
@@ -68,7 +66,7 @@ pub enum FieldValue {
     VecF64(Vec<f64>),
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
 pub enum FieldType {
     Standard,
     Repeating,

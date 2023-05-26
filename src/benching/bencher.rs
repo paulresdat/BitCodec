@@ -1,4 +1,6 @@
-pub fn bench<F>(f: F) -> BenchDuration
+use std::{fmt, time::Instant};
+
+pub fn bencher<F>(f: F) -> BenchDuration
     where F: Fn() {
     
     let mut bench = BenchDuration { nano: 0, micro: 0f64, milli: 0f64 };
@@ -13,14 +15,16 @@ pub fn bench<F>(f: F) -> BenchDuration
         }
     }
     
-    for _ in 0..10 {
+    for i in 0..10 {
         let before = Instant::now();
         for _ in 0..1000 {
             //get_bits(&v, 0, 1);
             f();
         }
-        let duration = before.elapsed().as_nanos() / 1000;
-        times.push(duration as u64);
+        // there's roughly 6 nanosecond overhead with each iteration
+        let d2 = (before.elapsed().as_nanos() - (6*1000)) / 1000;
+        println!("Iteration (nano) {}: {}", i+1, d2);
+        times.push(d2 as u64);
     }
 
     let mut tot: u128 = 0;

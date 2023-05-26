@@ -1,8 +1,5 @@
-// use chrono::{DateTime, TimeZone, Utc};
-
-// use std::io::{stdout, Write};
-
 /// This function gets the bit value as a boolean from the byte
+
 pub fn get_bit(byte: u8, pos: u8) -> bool {
     ((byte >> pos) & 1) == 1
 }
@@ -63,7 +60,6 @@ impl IntConverter {
         return f32::from_be_bytes(bytes[bytes.len()-4..].try_into().unwrap());
     }
 }
-
 
 // fn pad_vec(bytes: Vec<u8>, of_arbitrary_size: usize) -> Vec<u8> {
 //     let len = bytes.len();
@@ -130,7 +126,11 @@ pub fn get_bits_byte_pad_left(bytes: &[u8], start: usize, end: usize, pad_bytes:
 ///     -> this will automatically pad to the left
 ///   -> if right pad
 ///     -> panic for now
+/// 
+/// Benchmarked at around 300 nanoseconds roughly, ROUGHLY.  Probably faster because the benchmark is not highly accurate
+/// and ran on a mac system with other stuff running on it.
 pub fn get_bits_left_pad(bytes: &[u8], start: usize, end: usize) -> Vec<u8> {
+    // the vec is probably what takes up the most processing here
     let mut return_bytes: Vec<u8> = Vec::new();
     if start >= end {
         return return_bytes;

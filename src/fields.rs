@@ -1,5 +1,5 @@
 use core::fmt;
-use chrono::{Utc, DateTime};
+// use chrono::{Utc, DateTime};
 use serde::{Serialize, Deserialize};
 
 // #[derive(Serialize)]
@@ -14,8 +14,7 @@ pub struct Field {
     pub repeating_spec_id: Option<String>,
 }
 
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum FieldDataType {
     Byte, // U8
     U16,
@@ -34,39 +33,39 @@ pub enum FieldDataType {
     Utc,
 }
 
-pub enum FieldValue {
-    Byte(u8), // U8
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    U128(u128),
-    I8(i8),
-    I16(i16),
-    I32(i32),
-    I64(i64),
-    I128(i128),
-    F32(f32),
-    F64(f64),
-    // not sure yet how to handle this
-    String(String),
-    Utc(DateTime<Utc>),
+// pub enum FieldValue {
+//     Byte(u8), // U8
+//     U16(u16),
+//     U32(u32),
+//     U64(u64),
+//     U128(u128),
+//     I8(i8),
+//     I16(i16),
+//     I32(i32),
+//     I64(i64),
+//     I128(i128),
+//     F32(f32),
+//     F64(f64),
+//     // not sure yet how to handle this
+//     String(String),
+//     Utc(DateTime<Utc>),
 
-    // for repeating fields
-    VecU8(Vec<u8>),
-    VecU16(Vec<u16>),
-    VecU32(Vec<u32>),
-    VecU64(Vec<u64>),
-    VecU128(Vec<u128>),
-    VecI8(Vec<i8>),
-    VecI16(Vec<i16>),
-    VecI32(Vec<i32>),
-    VecI64(Vec<i64>),
-    VecI128(Vec<i128>),
-    VecF32(Vec<f32>),
-    VecF64(Vec<f64>),
-}
+//     // for repeating fields
+//     VecU8(Vec<u8>),
+//     VecU16(Vec<u16>),
+//     VecU32(Vec<u32>),
+//     VecU64(Vec<u64>),
+//     VecU128(Vec<u128>),
+//     VecI8(Vec<i8>),
+//     VecI16(Vec<i16>),
+//     VecI32(Vec<i32>),
+//     VecI64(Vec<i64>),
+//     VecI128(Vec<i128>),
+//     VecF32(Vec<f32>),
+//     VecF64(Vec<f64>),
+// }
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum FieldType {
     Standard,
     Repeating,

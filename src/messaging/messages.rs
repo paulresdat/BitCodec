@@ -2,14 +2,6 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::fields::Field;
 
-pub trait IFieldGenerator {
-    fn flatten_fields<'a>(messages: &'a Vec<&'a Message>) -> Vec<Field>;
-}
-
-pub struct FieldGenerator {
-
-}
-
 pub struct MessageVersionQuery {
     pub message_id: i32,
     pub version_id: i32,
@@ -19,32 +11,12 @@ pub struct MessageUniqueIdQuery {
     pub unique_id: String
 }
 
-// pub trait MessageVersionQuery {
-//     fn get_unique_id(&self) -> String;
-// }
-
-// impl MessageVersionQuery for MessageVersion {
-//     fn get_unique_id(&self) -> String {
-//         format!("{}.{}", self.message_id, self.version_id)
-//     }
-// }
-
-// impl MessageVersionQuery for MessageUniqueIdQuery {
-//     fn get_unique_id(&self) -> String {
-//         self.unique_id
-//     }
-// }
-
-// pub trait UniqueMessageId {
-//     type DataType: MessageVersionQuery;
-//     fn get_unique_id(self) -> Self::DataType;
-// }
-
 pub trait IMessageVerionQuery: Into<String> {
     
 }
 
 impl IMessageVerionQuery for MessageVersionQuery { }
+impl IMessageVerionQuery for MessageUniqueIdQuery { }
 
 impl Into<String> for MessageVersionQuery {
     fn into(self) -> String {
@@ -58,42 +30,6 @@ impl Into<String> for MessageUniqueIdQuery {
     }
 }
 
-// impl UniqueMessageId for MessageVersion {
-//     type DataType: MessageVersionQuery;
-
-//     fn testing(self) -> MessageVersionQuery {
-//         todo!()
-//     }
-// }
-
-// impl UniqueMessageId for MessageVersion {
-//     type DataType;
-//     fn testing(self) -> Self::DataType {
-//         todo!()
-//     }
-// }
-
-impl IFieldGenerator for FieldGenerator {
-    fn flatten_fields<'a>(messages: &'a Vec<&'a Message>) -> Vec<Field> {
-        let mut v = Vec::new();
-
-        for m in messages {
-            for f in &m.spec.fields {
-                let s = f.clone();
-                v.push(s);
-            }
-        }
-
-        return v;
-    }
-}
-
-pub struct Message
-{
-    pub spec: MessageSpec,
-    pub embedded_specs: Vec<MessageSpec>,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MessageSpec {
     pub message_id: i32,
@@ -104,6 +40,17 @@ pub struct MessageSpec {
 }
 
 impl MessageSpec {
+    #[allow(unused)]
+    pub fn new(message_id: i32, version_id: i32) -> Self {
+        Self {
+            message_id: message_id,
+            version_id: version_id,
+            unique_id: None,
+            _generated_unique_id: None,
+            fields: Vec::new()
+        }
+    }
+
     pub fn get_unique_id(&mut self) -> String {
         match &self.unique_id {
             Some(v) => return v.to_string(),
@@ -121,31 +68,70 @@ impl MessageSpec {
     }
 }
 
-
-pub struct MessageFactory {
-    messages: Option<HashMap<String, MessageSpec>>,
+pub enum MessageDataSourceEnum {
+    Json,
+}
+pub struct LoadFromJson {
+    pub json_data: String
 }
 
-impl MessageFactory {
-    pub fn new() -> Self {
+pub trait IMessageDataSource {
+    fn source_type(&self) -> MessageDataSourceEnum;
+    fn source_data(&self) -> String;
+}
+
+impl IMessageDataSource for LoadFromJson {
+    fn source_data(&self) -> String {
+        self.json_data.to_owned()
+    }
+
+    fn source_type(&self) -> MessageDataSourceEnum {
+        MessageDataSourceEnum::Json
+    }
+}
+
+pub struct Message<'a> {
+    pub message_spec: &'a MessageSpec,
+    pub embedded_specs: Vec<&'a MessageSpec>,
+}
+
+pub struct MessageFactory<'a> {
+    messages: Option<HashMap<String, MessageSpec>>,
+    _cached_fetched_messages: HashMap<String, Message<'a>>,
+}
+
+impl<'a> MessageFactory<'a> {
+    pub fn new(hash_map: HashMap<String, Message<'a>>) -> Self {
         Self {
             messages: None,
+            _cached_fetched_messages: hash_map,
         }
     }
 
-    pub fn load(&mut self, the_data: &String) {
-        let d: Vec<MessageSpec> = serde_json::from_str(the_data).unwrap();
-        if self.messages.is_none() {
-            self.messages = Some(HashMap::new());
-        }
-        for mut m in d {
-            self.messages.as_mut().unwrap().insert(m.get_unique_id(), m);
+    pub fn load<T>(&mut self, the_data: T) where T: IMessageDataSource {
+        let source_type = the_data.source_type();
+        match source_type {
+            MessageDataSourceEnum::Json => {
+                let data = the_data.source_data();
+                let d: Vec<MessageSpec> = serde_json::from_str(data.as_str()).unwrap();
+                if self.messages.is_none() {
+                    self.messages = Some(HashMap::new());
+                }
+                for mut m in d {
+                    self.messages.as_mut().unwrap().insert(m.get_unique_id(), m);
+                }
+            }
         }
     }
 
-    pub fn fetch<T>(&mut self, unique_id_query: T) -> Result<Vec<&MessageSpec>, String>
+    pub fn fetch<T>(&mut self, unique_id_query: T) -> Result<&Message, String>
         where T: IMessageVerionQuery {
         let unique_id = unique_id_query.into() as String;
+        
+        // return the cached value, speeding up the process
+        if self._cached_fetched_messages.contains_key(&unique_id) {
+            return Ok(&self._cached_fetched_messages[&unique_id]);
+        }
 
         if self.messages.is_none() {
             return Err(format!("No messages were loaded, could not find {}", unique_id))
@@ -153,14 +139,15 @@ impl MessageFactory {
 
         let mut v: Vec<&MessageSpec> = Vec::new();
         let mut selected_message_ids: Vec<String> = Vec::new();
-
+        let mut parent_message: Option<&MessageSpec> = None;
         if let Some(message) = self._fetch_message(&unique_id) {
+            parent_message = Some(message);
+            // for embedded reasons, go ahead and add it
             v.push(message);
         } else {
             return Err(format!("No message '{}' was found", unique_id));
         }
 
-        // self._current_message_ids.push(message_id);
         let mut no_more_specs = false;
         let mut iteration_depth = 0;
         let max_iteration_depth = 1000;
@@ -184,10 +171,21 @@ impl MessageFactory {
             iteration_depth += 1;
         }
 
-        return Ok(v);
+        // remove the parent spec
+        v.remove(0);
+
+        // now return the full message with all its embedded message specs
+        let full_message = Message {
+            message_spec: parent_message.unwrap(),
+            embedded_specs: v,
+        };
+        // this is pain.  How in the world are you able to cache things then??
+        let unique_id = parent_message.unwrap().get_unique_id();
+        self._cached_fetched_messages.insert(unique_id, full_message);
+        return Ok(&self._cached_fetched_messages[&unique_id]);
     }
 
-    fn _fetch_message<'a>(&'a self, spec_id: &String) -> Option<&'a MessageSpec> {
+    fn _fetch_message<'b>(&'b self, spec_id: &String) -> Option<&'b MessageSpec> {
         let m = self.messages.as_ref().unwrap();
         if m.contains_key(spec_id) {
             let c = m.get(spec_id).unwrap();
@@ -198,7 +196,7 @@ impl MessageFactory {
         }
     }
 
-    fn _fetch_next_spec_id<'a>(&'a self, messages: &Vec<&'a MessageSpec>, selected_message_ids: &Vec<String>) -> Result<String, &str> {
+    fn _fetch_next_spec_id<'b>(&'b self, messages: &Vec<&'a MessageSpec>, selected_message_ids: &Vec<String>) -> Result<String, &str> {
         for m in messages {
             for f in &m.fields {
                 if let Some(spec_id) = &f.repeating_spec_id {
@@ -213,72 +211,3 @@ impl MessageFactory {
         return Err("No more to be found");
     }
 }
-
-// #[derive(Debug)]
-// pub struct Message {
-//     pub header: MessageHeader,
-//     pub body: Option<Vec<u8>>,
-//     // body_t: T,
-// }
-
-// #[derive(Debug)]
-// pub struct MessageHeader {
-//     pub message_id: u32,
-//     pub unix_time: i64,
-// }
-
-// impl Message {
-//     // priv unix_datestamp: Options<DateTime<Utc>>;
-//     pub fn date(&self) -> DateTime<Utc> {
-//         return Utc.timestamp_opt(self.header.unix_time, 0).unwrap()
-//     }
-// }
-
-// pub struct MessageBuilder {
-//     header_message_id: u32,
-//     header_unix_time: i64,
-//     body_data: Option<Vec<u8>>,
-//     // pub message: Message
-// }
-
-// impl MessageBuilder {
-//     pub fn new() -> MessageBuilder {
-//         MessageBuilder {
-//             header_message_id: 0,
-//             header_unix_time: 0,
-//             body_data: None
-//         }
-//     }
-
-//     pub fn default(&mut self) -> &mut MessageBuilder {
-//         self.header_message_id = 0;
-//         self.header_unix_time = 0;
-//         self.body_data = None;
-//         self
-//     }
-
-//     pub fn with_message_id(&mut self, message_id: u32) -> &mut MessageBuilder {
-//         self.header_message_id = message_id;
-//         self
-//     }
-
-//     pub fn with_unix_time(&mut self, unix_time: i64) -> &mut MessageBuilder {
-//         self.header_unix_time = unix_time;
-//         self
-//     }
-
-//     pub fn with_body(&mut self, byte_data: Vec<u8>) -> &mut MessageBuilder {
-//         self.body_data = Some(byte_data);
-//         self
-//     }
-
-//     pub fn build(&self) -> Message {
-//         Message {
-//             header: MessageHeader {
-//                 message_id: self.header_message_id,
-//                 unix_time: self.header_unix_time,
-//             },
-//             body: Some(self.body_data.as_ref().unwrap().clone()),
-//         }
-//     }
-// }

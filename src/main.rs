@@ -2,67 +2,115 @@ mod fields;
 pub mod encoder;
 mod messaging;
 mod benching;
-use std::{collections::HashMap};
-use benching::{bencher::{bencher}, benchmarks::benchmark_bit_pad_left};
-use encoder::bitwise_ops::{get_bits_left_pad, get_bits_byte_pad_left, IntConverter};
-use fields::{FieldDataType, Field, FieldValue};
-use messaging::messages::{MessageFactory, MessageVersionQuery};
+use std::collections::HashMap;
+
+use messaging::messages::{MessageFactory, MessageVersionQuery, LoadFromJson, MessageUniqueIdQuery, Message};
 
 fn main() {
-    let mut mf = MessageFactory::new();
-    let the_data = r#"
-[
-    {
-        "message_id": 1,
-        "version_id": 1,
-        "fields": [{
-            "name": "field1",
-            "data_type": "Byte",
-            "field_length": 2,
-            "field_length_type": "Bits",
-            "field_type": "Standard"
+
+
+    let s = r#"
+    [
+        {
+            "message_id": 1,
+            "version_id": 1,
+            "fields": [{
+                "name": "field1",
+                "data_type": "Byte",
+                "field_length": 2,
+                "field_length_type": "Bits",
+                "field_type": "Standard"
+            },
+            {
+                "name": "field2",
+                "data_type": "Byte",
+                "field_length": 1,
+                "field_length_type": "Bits",
+                "field_type": "Repeating",
+                "repeating_spec_id": "2.1"
+            }]
         },
         {
-            "name": "field2",
-            "data_type": "Byte",
-            "field_length": 0,
-            "field_length_type": "Bits",
-            "field_type": "Repeating",
-            "repeating_spec_id": "2.1"
-        }]
-    },
-    {
-        "message_id": 2,
-        "version_id": 1,
-        "fields": [{
-            "name": "field3",
-            "data_type": "Byte",
-            "field_length": 2,
-            "field_length_type": "Bits",
-            "field_type": "Standard"
-        }]
-    },
-    {
-        "message_id": 3,
-        "version_id": 1,
-        "unique_id": "message3",
-        "fields": [{
-            "name": "field4",
-            "data_type": "Byte",
-            "field_length": 2,
-            "field_length_type": "Bits",
-            "field_type": "Standard"
-        }]
-    }
-]"#;
+            "message_id": 2,
+            "version_id": 1,
+            "fields": [{
+                "name": "field1",
+                "data_type": "Byte",
+                "field_length": 8,
+                "field_length_type": "Bits",
+                "field_type": "Standard"
+            }]
+        }
+    ]
+    "#;
 
-    mf.load(&the_data.to_string());
+    let cached_messages: HashMap<String, Message> = HashMap::new();
+    let mut m = MessageFactory::new(cached_messages);
+    let n = LoadFromJson{ json_data: s.to_string() };
+    m.load(n);
 
-    let query = MessageVersionQuery { message_id: 1, version_id: 1};
-    match mf.fetch(query) {
-        Ok(m) => println!("Hooray! {:?}", m),
-        Err(s) => println!("An error occurred: {}", s),
-    }
+    let q = MessageUniqueIdQuery { unique_id: "1.1".to_string() };
+    let m2 = m.fetch(q);
+//     let mut mf = MessageFactory::new();
+//     let the_data = r#"
+// [
+//     {
+//         "message_id": 1,
+//         "version_id": 1,
+//         "fields": [{
+//             "name": "field1",
+//             "data_type": "Byte",
+//             "field_length": 2,
+//             "field_length_type": "Bits",
+//             "field_type": "Standard"
+//         },
+//         {
+//             "name": "field2",
+//             "data_type": "Byte",
+//             "field_length": 0,
+//             "field_length_type": "Bits",
+//             "field_type": "Repeating",
+//             "repeating_spec_id": "2.1"
+//         }]
+//     },
+//     {
+//         "message_id": 2,
+//         "version_id": 1,
+//         "fields": [{
+//             "name": "field3",
+//             "data_type": "Byte",
+//             "field_length": 2,
+//             "field_length_type": "Bits",
+//             "field_type": "Standard"
+//         }]
+//     },
+//     {
+//         "message_id": 3,
+//         "version_id": 1,
+//         "unique_id": "message3",
+//         "fields": [{
+//             "name": "field4",
+//             "data_type": "Byte",
+//             "field_length": 2,
+//             "field_length_type": "Bits",
+//             "field_type": "Standard"
+//         }]
+//     }
+// ]"#;
+
+//     let load = LoadFromJson {
+//         json_data: the_data.to_string()
+//     };
+//     mf.load(load);
+
+//     let query = MessageVersionQuery { message_id: 1, version_id: 1};
+//     match mf.fetch(query) {
+//         Ok(m) => {
+//             println!("Hooray! {:?}", m.message_spec);
+//             println!("Embedded specs {:?}", m.embedded_specs);
+//         }
+//         Err(s) => println!("An error occurred: {}", s),
+//     }
 
     // let t = HashMap::from([(1, f3)]);
     // this is called '"fat" pointer including vtable'

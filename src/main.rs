@@ -2,14 +2,12 @@ mod fields;
 pub mod encoder;
 mod messaging;
 mod benching;
-use std::collections::HashMap;
+// use std::{collections::HashMap, hash::Hash, marker::PhantomData};
 
-use messaging::messages::{MessageFactory, MessageVersionQuery, LoadFromJson, MessageUniqueIdQuery, Message};
+use messaging::{messages::{MessageFactory, LoadFromJson, MessageUniqueIdQuery}};
 
 fn main() {
-
-
-    let s = r#"
+    let data = r#"
     [
         {
             "message_id": 1,
@@ -43,10 +41,8 @@ fn main() {
         }
     ]
     "#;
-
-    let cached_messages: HashMap<String, Message> = HashMap::new();
-    let mut m = MessageFactory::new(cached_messages);
-    let n = LoadFromJson{ json_data: s.to_string() };
+    let mut m = MessageFactory::new();
+    let n = LoadFromJson{ json_data: data.to_string() };
     m.load(n);
 
     let q = MessageUniqueIdQuery { unique_id: "1.1".to_string() };

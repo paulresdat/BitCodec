@@ -1,4 +1,5 @@
 use core::fmt;
+use std::hash::Hash;
 // use chrono::{Utc, DateTime};
 use serde::{Serialize, Deserialize};
 
@@ -31,6 +32,12 @@ pub enum FieldDataType {
     // not sure yet how to handle this
     String,
     Utc,
+}
+
+impl Hash for FieldDataType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
 }
 
 // pub enum FieldValue {
@@ -71,6 +78,12 @@ pub enum FieldType {
     Repeating,
 }
 
+impl Hash for FieldType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
+}
+
 impl fmt::Display for FieldDataType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -99,6 +112,12 @@ pub enum BitLengthType {
     None
 }
 
+impl Hash for BitLengthType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
+}
+
 // do we really need the trait??
 // pub trait IField {
 //     fn get_data_type(&self) -> FieldDataType;
@@ -106,6 +125,18 @@ pub enum BitLengthType {
 //     fn get_field_length_type(&self) -> BitLengthType;
 //     fn set_value(&mut self, v: FieldValue);
 // }
+
+impl Hash for Field {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.data_type.hash(state);
+        self.field_length.hash(state);
+        self.field_length_type.hash(state);
+        self.field_type.hash(state);
+        self.repeating_length_name.hash(state);
+        self.repeating_spec_id.hash(state);
+    }
+}
 
 impl Field {
 //     fn get_data_type(&self) -> FieldDataType {

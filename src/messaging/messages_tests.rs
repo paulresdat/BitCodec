@@ -1,29 +1,64 @@
 #[cfg(test)]
 mod messages_tests {
-
-    use std::collections::HashMap;
+    use std::{collections::{
+        hash_map::DefaultHasher
+    },
+    hash::{
+        Hash,
+        Hasher
+    }};
 
     use crate::{
         messaging::messages::{
             MessageSpec,
+            // Message,
             MessageFactory,
             LoadFromJson,
-            MessageUniqueIdQuery, MessageVersionQuery, Message
+            MessageUniqueIdQuery, MessageVersionQuery
         },
         fields::{FieldDataType, FieldType, BitLengthType}
     };
 
     #[test]
-    fn unique_id_is_generated_if_no_unique_key_is_given() {
-        let mut m = MessageSpec::new(1, 1);
-        assert_eq!("1.1", m.get_unique_id());
-    }
-    
-    #[test]
     fn unique_id_is_given_if_specified() {
         let mut m = MessageSpec::new(1, 1);
         m.unique_id = Some("TESTING 123".to_string());
         assert_eq!("TESTING 123", m.get_unique_id());
+    }
+
+    #[test]
+    fn hash_code_uniqueness_given_for_messages() {
+        let m1 = MessageSpec::new(1, 1);
+        let m2 = MessageSpec::new(1, 1);
+        let mut hash = DefaultHasher::new();
+        m1.hash(&mut hash);
+        let id1 = hash.finish();
+        let mut hash = DefaultHasher::new();
+        m2.hash(&mut hash);
+        let id2 = hash.finish();
+        println!("{} {}", id1, id2);
+        assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn hash_code_uniqueness_given_for_messages2() {
+        let m1 = MessageSpec::new(1, 1);
+        let m2 = MessageSpec::new(1, 2);
+        let mut hash = DefaultHasher::new();
+        m1.hash(&mut hash);
+        let id1 = hash.finish();
+        let mut hash = DefaultHasher::new();
+        m2.hash(&mut hash);
+        let id2 = hash.finish();
+        println!("{} {}", id1, id2);
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn equality_of_message_spec() {
+        let m1 = MessageSpec::new(1, 1);
+        let m2 = MessageSpec::new(1, 2);
+        assert!(m1 != m2);
     }
 
     #[test]
@@ -51,15 +86,14 @@ mod messages_tests {
         ]
         "#;
 
-        let cached_messages: HashMap<String, Message> = HashMap::new();
-        let mut m = MessageFactory::new(cached_messages);
+        let mut m = MessageFactory::new();
         let n = LoadFromJson{ json_data: s.to_string() };
         m.load(n);
 
         let q = MessageUniqueIdQuery { unique_id: "1.1".to_string() };
         match m.fetch(q) {
             Ok(m) => {
-                let e = m.message_spec;
+                let e = &m.message_spec;
                 assert_eq!(0, m.embedded_specs.len());
                 assert_eq!(2, e.fields.len());
 
@@ -96,7 +130,7 @@ mod messages_tests {
 
         match m.fetch(q2) {
             Ok(m) => {
-                let e = m.message_spec;
+                let e = &m.message_spec;
                 assert_eq!(0, m.embedded_specs.len());
                 assert_eq!(2, e.fields.len());
                 assert_eq!(1, e.message_id);
@@ -146,16 +180,15 @@ mod messages_tests {
         ]
         "#;
 
-        let cached_messages: HashMap<String, Message> = HashMap::new();
-        let mut m = MessageFactory::new(cached_messages);
+        let mut m = MessageFactory::new();
         let n = LoadFromJson{ json_data: s.to_string() };
         m.load(n);
 
         let q = MessageUniqueIdQuery { unique_id: "1.1".to_string() };
-
         match m.fetch(q) {
             Ok(m) => {
-                let e = m.message_spec;
+                let e = &m.message_spec;
+                println!("{:?}", m.embedded_specs);
                 assert_eq!(1, m.embedded_specs.len());
                 assert_eq!(2, e.fields.len());
                 assert_eq!(1, e.message_id);

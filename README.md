@@ -1,8 +1,12 @@
 # BitCodec
 A general encoder/decoder in Rust
 
-This is still very much a work in progres. For the time being this is here so that I can have a git repository for the work.
+## Decoding to the Bits
 
-This library is a general purpose low level implementation of compacted messages where values need to be represented using an arbitrary number of bits as defined in a spec.  Data is often transmitted in this fashion when bandwidth is a concern.  A good example would GNSS satellite messaging (also known as RTCM messages).  Satellites package values into a message and then concatenate those messages into a byte stream.  Each message has many values that need to be extracted at bit positions, not byte positions.
+This project is a work in progress.  The library is meant to be a general purpose bit encoder/decoder module where you can specify message specs using JSON that will detail the anatomy of a message down to the bit length, not byte length.  For example: 2 bits can represent 4 values, so you can encode a value of 0-3 in the message as 2 bits and then decode it back to a byte or even int32 in whatever application is consuming the message.
 
-Once I've got this working, I'll explain more.
+Data is often transmitted in this fashion when bandwidth is a concern.  A good example would be GNSS satellite messaging also known as RTCM messages.  Satellites package geographical calculations and satellite data into messages by concatenating those values as a stream of bits with endian padding to the next byte.  In turn they then concatenate those messages into a byte stream.  Each message has many values that need to be extracted at bit positions, not byte positions.
+
+## More to Come
+
+At the time of this writing, I have a successful decoder and am working on repeating fields and the encoder.

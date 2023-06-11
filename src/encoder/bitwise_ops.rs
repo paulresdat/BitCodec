@@ -141,7 +141,7 @@ pub fn get_bits_left_pad(bytes: &[u8], start: usize, end: usize) -> Vec<u8> {
     let mut last = return_bytes.len()-1;
     // we are marching down the bit stream from the right to the left
     // so that when we end, we end on a byte that is padded to the left
-    for i in (start..end+1).rev() {
+    for i in (start..end).rev() {
         if c == 8 {
             return_bytes.push(0u8);
             last = return_bytes.len()-1;

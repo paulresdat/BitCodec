@@ -1,9 +1,8 @@
 use core::fmt;
 use std::hash::Hash;
-// use chrono::{Utc, DateTime};
+use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 
-// #[derive(Serialize)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
     pub name: String,
@@ -17,6 +16,7 @@ pub struct Field {
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum FieldDataType {
+    Bool,
     Byte, // U8
     U16,
     U32,
@@ -40,37 +40,39 @@ impl Hash for FieldDataType {
     }
 }
 
-// pub enum FieldValue {
-//     Byte(u8), // U8
-//     U16(u16),
-//     U32(u32),
-//     U64(u64),
-//     U128(u128),
-//     I8(i8),
-//     I16(i16),
-//     I32(i32),
-//     I64(i64),
-//     I128(i128),
-//     F32(f32),
-//     F64(f64),
-//     // not sure yet how to handle this
-//     String(String),
-//     Utc(DateTime<Utc>),
+#[derive(Debug)]
+pub enum FieldValue {
+    Bool(bool),
+    Byte(u8), // U8
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    F32(f32),
+    F64(f64),
+    // not sure yet how to handle this
+    String(String),
+    Utc(DateTime<Utc>),
 
-//     // for repeating fields
-//     VecU8(Vec<u8>),
-//     VecU16(Vec<u16>),
-//     VecU32(Vec<u32>),
-//     VecU64(Vec<u64>),
-//     VecU128(Vec<u128>),
-//     VecI8(Vec<i8>),
-//     VecI16(Vec<i16>),
-//     VecI32(Vec<i32>),
-//     VecI64(Vec<i64>),
-//     VecI128(Vec<i128>),
-//     VecF32(Vec<f32>),
-//     VecF64(Vec<f64>),
-// }
+    // for repeating fields
+    VecU8(Vec<u8>),
+    VecU16(Vec<u16>),
+    VecU32(Vec<u32>),
+    VecU64(Vec<u64>),
+    VecU128(Vec<u128>),
+    VecI8(Vec<i8>),
+    VecI16(Vec<i16>),
+    VecI32(Vec<i32>),
+    VecI64(Vec<i64>),
+    VecI128(Vec<i128>),
+    VecF32(Vec<f32>),
+    VecF64(Vec<f64>),
+}
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum FieldType {
@@ -87,6 +89,7 @@ impl Hash for FieldType {
 impl fmt::Display for FieldDataType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            FieldDataType::Bool => write!(f, "FieldDataType::Bool"),
             FieldDataType::Byte => write!(f, "FieldDataType::Byte"),
             FieldDataType::U16 => write!(f, "FieldDataType::U16"),
             FieldDataType::U32 => write!(f, "FieldDataType::U32"),
@@ -118,13 +121,6 @@ impl Hash for BitLengthType {
     }
 }
 
-// do we really need the trait??
-// pub trait IField {
-//     fn get_data_type(&self) -> FieldDataType;
-//     fn get_field_length(&self) -> u32;
-//     fn get_field_length_type(&self) -> BitLengthType;
-//     fn set_value(&mut self, v: FieldValue);
-// }
 
 impl Hash for Field {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -155,19 +151,6 @@ impl Field {
     //     self.value = Some(v);
     // }
 }
-
-// #[derive(Clone, Copy)]
-// pub enum FieldValue {
-//     U8(u8),
-//     U16(u16),
-//     U32(u32),
-//     U64(u64),
-
-//     I8(u8),
-//     I16(u16),
-//     I32(u32),
-//     I64(u64),
-// }
 
 // #[derive(Clone)]
 // pub enum Fields {

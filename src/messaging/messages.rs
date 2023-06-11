@@ -93,7 +93,6 @@ impl PartialEq for Message {
 pub struct MessageFactory {
     messages: Option<HashMap<String, Box<MessageSpec>>>,
     _cached_messages: HashMap<String, Box<Message>>,
-    // _cached_fetched_messages: CachedMessages<'a>
 }
 
 impl MessageFactory {

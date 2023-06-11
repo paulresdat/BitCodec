@@ -7,21 +7,21 @@ mod bitwise_ops_tests {
         let bytes: [u8; 3] = [0b0011_1111, 0b0011_0011, 0b0000_0011];
     
         // works across bytes, that's good
-        let new_b = get_bits_left_pad(&bytes, 0, 7);
+        let new_b = get_bits_left_pad(&bytes, 0, 8);
         assert_eq!(new_b[0], 0b0011_1111);
-        let new_b = get_bits_left_pad(&bytes, 1, 8);
+        let new_b = get_bits_left_pad(&bytes, 1, 9);
         assert_eq!(new_b[0], 0b0111_1110);
-        let new_b = get_bits_left_pad(&bytes, 2, 9);
+        let new_b = get_bits_left_pad(&bytes, 2, 10);
         assert_eq!(new_b[0], 0b1111_1100);
     
         // // now does it work with more than one byte
-        let mut new_b = get_bits_left_pad(&bytes, 0, 15);
+        let mut new_b = get_bits_left_pad(&bytes, 0, 16);
         // note, this is without reversal so we need to reverse for the correct byte
         new_b.reverse();
         assert_eq!(new_b[0], 0b0011_1111);
         assert_eq!(new_b[1], 0b0011_0011);
     
-        let mut new_b = get_bits_left_pad(&bytes, 1, 14);
+        let mut new_b = get_bits_left_pad(&bytes, 1, 15);
         new_b.reverse();
         assert_eq!(new_b[0], 0b0001_1111);
         assert_eq!(new_b[1], 0b1001_1001);
@@ -34,7 +34,7 @@ mod bitwise_ops_tests {
     fn can_pad_bits_to_expected_byte_length_for_conversion() {
         let bytes: [u8; 3] = [0b0011_1111, 0b0011_0011, 0b0000_0011];
         // 64 bits
-        let new_b = get_bits_byte_pad_left(&bytes, 0, 7, 8);
+        let new_b = get_bits_byte_pad_left(&bytes, 0, 8, 8);
         assert_eq!(8, new_b.len());
     }
 }
